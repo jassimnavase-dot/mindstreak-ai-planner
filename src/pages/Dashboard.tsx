@@ -1,8 +1,13 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import XPGain from "@/components/XPGain";
+import LevelUpModal from "@/components/LevelUpModal";
+import Leaderboard from "@/components/Leaderboard";
+import { calculateLevel, getXPProgress } from "@/data/badges";
 import { 
   Trophy, 
   Flame, 
@@ -12,16 +17,47 @@ import {
   TrendingUp,
   Calendar,
   BookOpen,
-  Target
+  Target,
+  Award
 } from "lucide-react";
 
 const Dashboard = () => {
-  const [tasks] = useState([
-    { id: 1, subject: "Mathematics", task: "Complete Chapter 5 exercises", due: "Today", completed: false },
-    { id: 2, subject: "Physics", task: "Watch lecture on Thermodynamics", due: "Today", completed: true },
-    { id: 3, subject: "Chemistry", task: "Lab report submission", due: "Tomorrow", completed: false },
-    { id: 4, subject: "English", task: "Essay on Shakespeare", due: "In 2 days", completed: false },
+  const [showXPGain, setShowXPGain] = useState(false);
+  const [xpGainAmount, setXpGainAmount] = useState(0);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [newLevel, setNewLevel] = useState(1);
+  const [userXP, setUserXP] = useState(2450);
+  
+  const [tasks, setTasks] = useState([
+    { id: 1, subject: "Mathematics", task: "Complete Chapter 5 exercises", due: "Today", completed: false, xp: 50 },
+    { id: 2, subject: "Physics", task: "Watch lecture on Thermodynamics", due: "Today", completed: true, xp: 40 },
+    { id: 3, subject: "Chemistry", task: "Lab report submission", due: "Tomorrow", completed: false, xp: 60 },
+    { id: 4, subject: "English", task: "Essay on Shakespeare", due: "In 2 days", completed: false, xp: 75 },
   ]);
+
+  const handleCompleteTask = (taskId: number) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task || task.completed) return;
+
+    const oldLevel = calculateLevel(userXP);
+    const newXP = userXP + task.xp;
+    const newLevelCalc = calculateLevel(newXP);
+
+    setUserXP(newXP);
+    setTasks(tasks.map((t) => (t.id === taskId ? { ...t, completed: true } : t)));
+    
+    // Show XP gain animation
+    setXpGainAmount(task.xp);
+    setShowXPGain(true);
+
+    // Check for level up
+    if (newLevelCalc > oldLevel) {
+      setTimeout(() => {
+        setNewLevel(newLevelCalc);
+        setShowLevelUp(true);
+      }, 1500);
+    }
+  };
 
   const weeklyProgress = [
     { day: "Mon", hours: 3, completed: true },
@@ -37,8 +73,25 @@ const Dashboard = () => {
   const totalTasks = tasks.length;
   const completionRate = Math.round((completedTasks / totalTasks) * 100);
 
+  const currentLevel = calculateLevel(userXP);
+  const levelProgress = getXPProgress(userXP);
+  const xpForNextLevel = currentLevel * 250;
+  const xpInCurrentLevel = userXP - ((currentLevel - 1) * 250);
+
   return (
     <div className="min-h-screen bg-background">
+      {showXPGain && (
+        <XPGain 
+          amount={xpGainAmount} 
+          onComplete={() => setShowXPGain(false)} 
+        />
+      )}
+      
+      <LevelUpModal 
+        level={newLevel} 
+        open={showLevelUp} 
+        onClose={() => setShowLevelUp(false)} 
+      />
       {/* Header */}
       <div className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-6">
@@ -61,11 +114,11 @@ const Dashboard = () => {
           <Card className="border-2 border-primary/20 shadow-md">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Total XP</p>
-                  <p className="text-3xl font-bold text-primary">2,450</p>
-                  <p className="text-xs text-muted-foreground mt-1">+125 this week</p>
-                </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Total XP</p>
+                <p className="text-3xl font-bold text-primary">{userXP.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground mt-1">Level {currentLevel}</p>
+              </div>
                 <div className="p-3 rounded-full bg-gradient-primary">
                   <Star className="h-6 w-6 text-primary-foreground" />
                 </div>
@@ -159,9 +212,16 @@ const Dashboard = () => {
                       </p>
                     </div>
                     {!task.completed && (
-                      <Button variant="ghost" size="sm">
-                        Mark Done
-                      </Button>
+                      <div className="flex flex-col gap-1 items-end">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleCompleteTask(task.id)}
+                        >
+                          Mark Done
+                        </Button>
+                        <span className="text-xs text-achievement font-medium">+{task.xp} XP</span>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -204,13 +264,23 @@ const Dashboard = () => {
             {/* Level Progress */}
             <Card className="border-2 border-primary/20">
               <CardHeader>
-                <CardTitle className="text-lg">Level Progress</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Level Progress</CardTitle>
+                  <Link to="/achievements">
+                    <Button variant="ghost" size="sm">
+                      <Award className="mr-2 h-4 w-4" />
+                      View All
+                    </Button>
+                  </Link>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-2xl font-bold">Level 12</p>
-                    <p className="text-sm text-muted-foreground">Dedicated Learner</p>
+                    <p className="text-2xl font-bold">Level {currentLevel}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {currentLevel < 5 ? "Beginner" : currentLevel < 10 ? "Learner" : "Dedicated Scholar"}
+                    </p>
                   </div>
                   <div className="p-3 rounded-full bg-gradient-primary">
                     <Trophy className="h-6 w-6 text-primary-foreground" />
@@ -218,13 +288,13 @@ const Dashboard = () => {
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span>2,450 / 3,000 XP</span>
-                    <span className="text-muted-foreground">550 to go</span>
+                    <span>{xpInCurrentLevel} / {250} XP</span>
+                    <span className="text-muted-foreground">{250 - xpInCurrentLevel} to go</span>
                   </div>
-                  <Progress value={82} className="h-3" />
+                  <Progress value={levelProgress} className="h-3" />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Complete 3 more tasks to reach Level 13!
+                  Complete tasks to reach Level {currentLevel + 1}!
                 </p>
               </CardContent>
             </Card>
@@ -235,56 +305,36 @@ const Dashboard = () => {
                 <CardTitle className="text-lg">Recent Badges</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted animate-in fade-in slide-in-from-left duration-300">
                   <div className="p-2 rounded-full bg-gradient-achievement">
                     <Trophy className="h-5 w-5 text-achievement-foreground" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <p className="font-medium text-sm">Streak Master</p>
                     <p className="text-xs text-muted-foreground">14 day streak</p>
                   </div>
+                  <span className="text-xs font-bold text-achievement">+300 XP</span>
                 </div>
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted animate-in fade-in slide-in-from-left duration-300 delay-75">
                   <div className="p-2 rounded-full bg-gradient-success">
                     <Star className="h-5 w-5 text-success-foreground" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <p className="font-medium text-sm">Quick Learner</p>
                     <p className="text-xs text-muted-foreground">Completed 10 tasks</p>
                   </div>
+                  <span className="text-xs font-bold text-achievement">+100 XP</span>
                 </div>
-                <Button variant="outline" size="sm" className="w-full">
-                  View All Badges
-                </Button>
+                <Link to="/achievements" className="block">
+                  <Button variant="outline" size="sm" className="w-full">
+                    View All Badges
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
 
-            {/* Timetable Preview */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Today's Schedule</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="w-2 h-2 rounded-full bg-primary" />
-                  <span className="text-muted-foreground">09:00</span>
-                  <span className="font-medium">Mathematics</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="w-2 h-2 rounded-full bg-achievement" />
-                  <span className="text-muted-foreground">11:00</span>
-                  <span className="font-medium">Physics</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="w-2 h-2 rounded-full bg-success" />
-                  <span className="text-muted-foreground">14:00</span>
-                  <span className="font-medium">Chemistry</span>
-                </div>
-                <Button variant="ghost" size="sm" className="w-full mt-2">
-                  View Full Timetable
-                </Button>
-              </CardContent>
-            </Card>
+            {/* Leaderboard Preview */}
+            <Leaderboard />
           </div>
         </div>
       </div>
