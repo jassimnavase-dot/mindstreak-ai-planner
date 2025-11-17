@@ -1,31 +1,44 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Brain, GraduationCap, Users, User } from "lucide-react";
-import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 type UserRole = "student" | "teacher" | "parent";
 
 const Auth = () => {
-  const navigate = useNavigate();
+  const { user, signUp, signIn } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [selectedRole, setSelectedRole] = useState<UserRole>("student");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      window.location.href = "/dashboard";
+    }
+  }, [user]);
 
   const handleAuth = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate authentication
-    setTimeout(() => {
-      setIsLoading(false);
-      toast.success(isLogin ? "Welcome back!" : "Account created successfully!");
-      navigate("/dashboard");
-    }, 1500);
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    if (isLogin) {
+      await signIn(email, password);
+    } else {
+      const name = formData.get("name") as string;
+      await signUp(email, password, name, selectedRole);
+    }
+
+    setIsLoading(false);
   };
 
   const roleCards = [
@@ -78,12 +91,12 @@ const Auth = () => {
             <TabsContent value="login" className="space-y-6">
               <form onSubmit={handleAuth} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <Input id="login-email" type="email" placeholder="student@example.com" required />
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" name="email" type="email" placeholder="student@example.com" required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
-                  <Input id="login-password" type="password" placeholder="••••••••" required />
+                  <Label htmlFor="password">Password</Label>
+                  <Input id="password" name="password" type="password" placeholder="••••••••" required />
                 </div>
                 <Button type="submit" variant="hero" className="w-full" disabled={isLoading}>
                   {isLoading ? "Signing in..." : "Sign In"}
@@ -126,16 +139,16 @@ const Auth = () => {
 
               <form onSubmit={handleAuth} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name</Label>
-                  <Input id="signup-name" type="text" placeholder="John Doe" required />
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input id="name" name="name" type="text" placeholder="John Doe" required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input id="signup-email" type="email" placeholder="john@example.com" required />
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" name="email" type="email" placeholder="john@example.com" required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input id="signup-password" type="password" placeholder="••••••••" required />
+                  <Label htmlFor="password">Password</Label>
+                  <Input id="password" name="password" type="password" placeholder="••••••••" required minLength={6} />
                 </div>
                 <Button type="submit" variant="hero" className="w-full" disabled={isLoading}>
                   {isLoading ? "Creating account..." : "Create Account"}

@@ -14,16 +14,212 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      badges: {
+        Row: {
+          category: string
+          condition_type: string
+          condition_value: number
+          created_at: string | null
+          description: string
+          icon: string
+          id: string
+          name: string
+          rarity: string
+          streak_required: number | null
+          tasks_required: number | null
+          xp_required: number | null
+        }
+        Insert: {
+          category: string
+          condition_type: string
+          condition_value: number
+          created_at?: string | null
+          description: string
+          icon: string
+          id?: string
+          name: string
+          rarity: string
+          streak_required?: number | null
+          tasks_required?: number | null
+          xp_required?: number | null
+        }
+        Update: {
+          category?: string
+          condition_type?: string
+          condition_value?: number
+          created_at?: string | null
+          description?: string
+          icon?: string
+          id?: string
+          name?: string
+          rarity?: string
+          streak_required?: number | null
+          tasks_required?: number | null
+          xp_required?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          available_study_hours: number | null
+          class_grade: string | null
+          created_at: string | null
+          email: string
+          id: string
+          level: number | null
+          longest_streak: number | null
+          name: string
+          profile_image: string | null
+          streak: number | null
+          subjects: string[] | null
+          updated_at: string | null
+          xp: number | null
+        }
+        Insert: {
+          available_study_hours?: number | null
+          class_grade?: string | null
+          created_at?: string | null
+          email: string
+          id: string
+          level?: number | null
+          longest_streak?: number | null
+          name: string
+          profile_image?: string | null
+          streak?: number | null
+          subjects?: string[] | null
+          updated_at?: string | null
+          xp?: number | null
+        }
+        Update: {
+          available_study_hours?: number | null
+          class_grade?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          level?: number | null
+          longest_streak?: number | null
+          name?: string
+          profile_image?: string | null
+          streak?: number | null
+          subjects?: string[] | null
+          updated_at?: string | null
+          xp?: number | null
+        }
+        Relationships: []
+      }
+      streak_logs: {
+        Row: {
+          created_at: string | null
+          date: string
+          id: string
+          maintained: boolean | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          maintained?: boolean | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          maintained?: boolean | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_badges: {
+        Row: {
+          badge_id: string
+          earned_at: string | null
+          id: string
+          progress: number | null
+          user_id: string
+        }
+        Insert: {
+          badge_id: string
+          earned_at?: string | null
+          id?: string
+          progress?: number | null
+          user_id: string
+        }
+        Update: {
+          badge_id?: string
+          earned_at?: string | null
+          id?: string
+          progress?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      xp_logs: {
+        Row: {
+          created_at: string | null
+          id: string
+          reason: string
+          user_id: string
+          xp_change: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          reason: string
+          user_id: string
+          xp_change: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          reason?: string
+          user_id?: string
+          xp_change?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "student" | "teacher" | "parent"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +346,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["student", "teacher", "parent"],
+    },
   },
 } as const
